@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: recognition-service
+
+  profiles:
+    active: test
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  # Waits for in-flight requests to finish before shutting down, so nobody
+  # standing at the turnstile receives half a response.
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: 8082
+  shutdown: graceful
+  error:
+    include-message: always
+    include-stacktrace: never
+
+faceid:
+  matching:
+    embedding-dimension: 512
+    # Cosine threshold. In production this is tuned from the EER or a
+    # TAR@FAR operating point.
+    similarity-threshold: 0.65
+    liveness-threshold: 0.5
+    top-k: 5
+    active-model-id: 1
+
+  demo:
+    subjects: 30
+    templates-per-subject: 2
+    genuine-noise: 0.039
+    spoof-liveness: 0.18
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  pattern:
+    # [requestId] — follows one request across the whole service chain
+    console: "%d{HH:mm:ss.SSS} %-5level [%X{requestId:-        }] %-42.42logger{39} : %msg%n"
+  level:
+    uz.tuit.faceid: INFO

@@ -1,0 +1,37 @@
+# PREPROD environment — PostgreSQL, identity schema. Flyway creates it.
+#
+#   $env:APP_ENV="preprod"
+#   $env:FACEID_DB_URL="jdbc:postgresql://localhost:5432/facedetection"
+#   $env:FACEID_DB_USER="postgres"
+#   $env:FACEID_DB_PASSWORD="..."
+
+spring:
+  datasource:
+    url: ${FACEID_DB_URL:jdbc:postgresql://localhost:5432/facedetection}
+    username: ${FACEID_DB_USER:postgres}
+    password: ${FACEID_DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: identity-preprod-pool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+      initialization-fail-timeout: 10000
+
+  flyway:
+    enabled: true
+    schemas: identity
+    create-schemas: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,flyway
+
+logging:
+  level:
+    uz.tuit.faceid: DEBUG
+    org.flywaydb: INFO

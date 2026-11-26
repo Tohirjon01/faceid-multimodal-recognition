@@ -1,0 +1,21 @@
+# PREPROD environment.
+#
+#   $env:APP_ENV="preprod"
+#   $env:FACEID_RECOGNITION_URL="http://localhost:8082"
+
+faceid:
+  analytics:
+    recognition-base-url: ${FACEID_RECOGNITION_URL:http://localhost:8082}
+    event-window: 200
+    connect-timeout-ms: 2000
+    read-timeout-ms: 5000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    uz.tuit.faceid: DEBUG

@@ -1,0 +1,56 @@
+# identity-service — shared settings
+# Environments: test → preprod → prod (selected via APP_ENV)
+
+spring:
+  application:
+    name: identity-service
+
+  profiles:
+    active: ${APP_ENV:test}
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: ${SERVER_PORT:8081}
+  shutdown: graceful
+  error:
+    include-message: always
+    include-stacktrace: never
+
+faceid:
+  identity:
+    # ZRU-547 does not fix a duration; this follows the organisation's policy.
+    retention-years: 3
+    default-expiry-window-days: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%X{requestId:-        }] %-42.42logger{39} : %msg%n"
+  level:
+    uz.tuit.faceid: INFO

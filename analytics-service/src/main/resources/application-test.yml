@@ -1,0 +1,11 @@
+# TEST environment — short timeouts so tests fail fast when the upstream is down.
+
+faceid:
+  analytics:
+    recognition-base-url: ${FACEID_RECOGNITION_URL:http://localhost:8082}
+    connect-timeout-ms: 1000
+    read-timeout-ms: 2000
+
+logging:
+  level:
+    uz.tuit.faceid: DEBUG

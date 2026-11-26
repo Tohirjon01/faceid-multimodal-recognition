@@ -1,0 +1,14 @@
+# TEST environment — in-memory store, no database required.
+# The datasource autoconfiguration is switched off so the service starts
+# cleanly on a machine without PostgreSQL.
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+logging:
+  level:
+    uz.tuit.faceid: DEBUG

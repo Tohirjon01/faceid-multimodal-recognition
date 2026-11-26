@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FaceID — recognition-service</title>
+<style>
+:root{
+  --bg:#f6f7f8; --surface:#fff; --surface-2:#eceef1; --fg:#161a1e; --muted:#5b646d;
+  --line:#ced4da; --accent:#15607f; --accent-soft:#e3eef3;
+  --ok:#1a8a76; --ok-soft:#e8f5f2; --warn:#b8730f; --warn-soft:#fbf3e6;
+  --bad:#a33a3a; --bad-soft:#f8eaea;
+  --mono:"Cascadia Code",Consolas,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#121517; --surface:#1a1e21; --surface-2:#23282c; --fg:#e6e9ec; --muted:#99a2ab;
+  --line:#343b41; --accent:#4ea8cc; --accent-soft:#17323d;
+  --ok:#46c2a8; --ok-soft:#14302a; --warn:#e0a747; --warn-soft:#33280f;
+  --bad:#d97a7a; --bad-soft:#331a1a; color-scheme:dark;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 56px}
+
+header{border-bottom:2px solid var(--fg);padding-bottom:18px;margin-bottom:24px}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+h1{font-size:clamp(24px,5vw,34px);line-height:1.1;margin:0 0 14px;letter-spacing:-.01em}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-family:var(--mono);font-size:11px;padding:4px 9px;border:1px solid var(--line);border-radius:2px;background:var(--surface);color:var(--muted)}
+.chip b{color:var(--fg);font-weight:600}
+.chip.hl{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+.controls{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:22px}
+button{font:inherit;font-size:14px;font-weight:500;padding:10px 16px;border-radius:3px;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);color:var(--fg);transition:transform .06s}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{opacity:.5;cursor:progress}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.ghost{font-family:var(--mono);font-size:12px;padding:9px 13px;color:var(--muted)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;margin-bottom:18px;overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.card-t{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.card-b{padding:16px}
+
+.verdict{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.badge{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.06em;padding:8px 15px;border-radius:3px;border:2px solid}
+.badge.GRANTED{color:var(--ok);background:var(--ok-soft);border-color:var(--ok)}
+.badge.UNKNOWN{color:var(--warn);background:var(--warn-soft);border-color:var(--warn)}
+.badge.SPOOF,.badge.DENIED,.badge.ERROR{color:var(--bad);background:var(--bad-soft);border-color:var(--bad)}
+.badge.WAIT{color:var(--muted);background:var(--surface-2);border-color:var(--line)}
+.who{font-size:19px;font-weight:600}
+.metrics{display:flex;gap:18px;flex-wrap:wrap;margin-left:auto}
+.metric{text-align:right}
+.metric .v{font-family:var(--mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.metric .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.note{margin:14px 0 0;padding:10px 13px;border-left:3px solid var(--accent);background:var(--surface-2);
+  font-size:13.5px;color:var(--muted);border-radius:0 3px 3px 0}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:9px 16px;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.top td{font-weight:600}
+tr.top td.n{color:var(--ok)}
+.bar{height:9px;border-radius:2px;background:var(--surface-2);overflow:hidden;min-width:90px}
+.bar i{display:block;height:100%;background:var(--muted)}
+tr.top .bar i{background:var(--ok)}
+.dec{font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:2px;border:1px solid}
+.dec.GRANTED{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+.dec.UNKNOWN{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.dec.SPOOF,.dec.DENIED{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+
+pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.6;
+  background:var(--surface-2);color:var(--fg);white-space:pre}
+.hid{display:none}
+.scroll{overflow-x:auto}
+footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+@media (max-width:560px){
+  .metrics{margin-left:0;width:100%}
+  th,td{padding:8px 12px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="kicker">TUIT · master's thesis · recognition-service</p>
+  <h1>Multimodal face recognition — biometric search</h1>
+  <div class="chips" id="chips">
+    <span class="chip">loading…</span>
+  </div>
+</header>
+
+<div class="controls">
+  <button class="primary" id="btnKnown">Enrolled subject</button>
+  <button id="btnStranger">Unknown person</button>
+  <button id="btnSpoof">Spoof (photo attack)</button>
+  <button class="ghost" id="btnExplain">EXPLAIN ANALYZE</button>
+  <button class="ghost" id="btnReseed">Reseed gallery</button>
+</div>
+
+<div class="card">
+  <div class="card-h">
+    <span class="card-t">Recognition result</span>
+    <span class="card-t" id="evId"></span>
+  </div>
+  <div class="card-b">
+    <div class="verdict">
+      <span class="badge WAIT" id="badge">—</span>
+      <span class="who" id="who">waiting</span>
+      <div class="metrics">
+        <div class="metric"><div class="v" id="mSim">—</div><div class="k">similarity</div></div>
+        <div class="metric"><div class="v" id="mThr">—</div><div class="k">threshold</div></div>
+        <div class="metric"><div class="v" id="mSearch">—</div><div class="k">search</div></div>
+        <div class="metric"><div class="v" id="mTotal">—</div><div class="k">total</div></div>
+        <div class="metric"><div class="v" id="mExpr">—</div><div class="k">expression</div></div>
+      </div>
+    </div>
+    <p class="note" id="note">Press a button, or wait — the page issues the first request on load.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h"><span class="card-t">Top-5 candidates — cosine similarity</span></div>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>#</th><th>Subject</th><th>Similarity</th><th style="width:38%">&nbsp;</th></tr></thead>
+      <tbody id="cands"><tr><td colspan="4" style="color:var(--muted)">waiting for a result…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card hid" id="planCard">
+  <div class="card-h"><span class="card-t">Query plan</span></div>
+  <pre id="plan"></pre>
+</div>
+
+<div class="card">
+  <div class="card-h"><span class="card-t">Event log</span></div>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>#</th><th>Time</th><th>Decision</th><th>Subject</th><th>Sim.</th><th>Liveness</th><th>Expression</th></tr></thead>
+      <tbody id="events"><tr><td colspan="7" style="color:var(--muted)">no events yet</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  The embeddings here are synthetic — this is an <b>infrastructure demo</b>, not an accuracy measurement.
+  Real figures come from the trained model and the ablation study.
+</footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt3 = v => (v === null || v === undefined) ? '—' : Number(v).toFixed(3);
+const buttons = ['btnKnown','btnStranger','btnSpoof','btnExplain','btnReseed'];
+
+function busy(on){ buttons.forEach(b => $(b).disabled = on); }
+
+async function api(path, opts){
+  const res = await fetch(path, opts);
+  const text = await res.text();
+  if (!res.ok) {
+    // Errors arrive as RFC 7807: {type, title, detail, code, requestId}
+    let msg = text;
+    try {
+      const p = JSON.parse(text);
+      msg = p.detail || p.title || p.message || text;
+      if (p.requestId) msg += '  (requestId: ' + p.requestId + ')';
+    } catch (e) { /* fall back to the raw body */ }
+    throw new Error(msg || ('HTTP ' + res.status));
+  }
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadStats(){
+  try {
+    const s = await api('/api/v1/demo/stats');
+    $('chips').innerHTML =
+      '<span class="chip hl">' + s.backend + '</span>' +
+      '<span class="chip">gallery <b>' + s.subjects + '</b> subjects</span>' +
+      '<span class="chip">templates <b>' + s.templates + '</b></span>' +
+      '<span class="chip">embedding <b>' + s.embeddingDimension + '-d</b></span>' +
+      '<span class="chip">threshold <b>' + fmt3(s.similarityThreshold) + '</b></span>' +
+      '<span class="chip">model <b>v' + s.activeModelId + '</b></span>';
+    $('mThr').textContent = fmt3(s.similarityThreshold);
+  } catch (e) {
+    $('chips').innerHTML = '<span class="chip">stats error: ' + e.message + '</span>';
+  }
+}
+
+function renderResult(r){
+  $('badge').className = 'badge ' + r.decision;
+  $('badge').textContent = r.decision;
+  $('who').textContent = r.fullName || (r.decision === 'SPOOF' ? 'not a live face' : 'no match');
+  $('mSim').textContent = fmt3(r.matchSimilarity);
+  $('mThr').textContent = fmt3(r.threshold);
+  $('mSearch').textContent = (r.searchMs !== undefined ? r.searchMs : 0) + ' ms';
+  $('mTotal').textContent = (r.totalMs !== undefined ? r.totalMs : 0) + ' ms';
+  $('mExpr').textContent = r.expression || '—';
+  $('note').textContent = r.note || '';
+  $('evId').textContent = r.eventId ? ('event #' + r.eventId) : '';
+
+  const rows = (r.candidates || []);
+  $('cands').innerHTML = rows.length === 0
+    ? '<tr><td colspan="4" style="color:var(--muted)">no candidates — the gallery is empty</td></tr>'
+    : rows.map(c => {
+        // Cosine lives in [-1,1]; rescale to [0,100] for the bar.
+        const pct = Math.max(0, Math.min(100, (c.similarity + 1) / 2 * 100));
+        return '<tr class="' + (c.aboveThreshold ? 'top' : '') + '">' +
+               '<td class="n">' + c.rank + '</td>' +
+               '<td>' + c.fullName + '</td>' +
+               '<td class="n">' + fmt3(c.similarity) + '</td>' +
+               '<td><span class="bar"><i style="width:' + pct.toFixed(1) + '%"></i></span></td>' +
+               '</tr>';
+      }).join('');
+}
+
+async function loadEvents(){
+  try {
+    const list = await api('/api/v1/events?limit=10');
+    $('events').innerHTML = (!list || list.length === 0)
+      ? '<tr><td colspan="7" style="color:var(--muted)">no events yet</td></tr>'
+      : list.map(e => '<tr>' +
+          '<td class="n">' + e.id + '</td>' +
+          '<td class="n">' + new Date(e.occurredAt).toLocaleTimeString('en-GB') + '</td>' +
+          '<td><span class="dec ' + e.decision + '">' + e.decision + '</span></td>' +
+          '<td>' + (e.fullName || '—') + '</td>' +
+          '<td class="n">' + fmt3(e.matchSimilarity) + '</td>' +
+          '<td class="n">' + fmt3(e.livenessScore) + '</td>' +
+          '<td>' + (e.expression || '—') + '</td>' +
+        '</tr>').join('');
+  } catch (e) {
+    $('events').innerHTML = '<tr><td colspan="7" style="color:var(--bad)">' + e.message + '</td></tr>';
+  }
+}
+
+async function identify(kind){
+  busy(true);
+  try {
+    renderResult(await api('/api/v1/demo/identify/' + kind, {method:'POST'}));
+    await loadEvents();
+  } catch (e) {
+    $('badge').className = 'badge ERROR';
+    $('badge').textContent = 'ERROR';
+    $('who').textContent = '—';
+    $('note').textContent = e.message;
+  } finally {
+    busy(false);
+  }
+}
+
+$('btnKnown').onclick    = () => identify('known');
+$('btnStranger').onclick = () => identify('stranger');
+$('btnSpoof').onclick    = () => identify('spoof');
+
+$('btnExplain').onclick = async () => {
+  busy(true);
+  $('planCard').classList.remove('hid');
+  $('plan').textContent = 'requesting…';
+  try {
+    const res = await fetch('/api/v1/demo/explain');
+    $('plan').textContent = await res.text();
+  } catch (e) {
+    $('plan').textContent = 'Error: ' + e.message;
+  } finally {
+    busy(false);
+  }
+};
+
+$('btnReseed').onclick = async () => {
+  busy(true);
+  try {
+    await api('/api/v1/demo/seed?subjects=30&templatesPerSubject=2', {method:'POST'});
+    await loadStats();
+    $('note').textContent = 'Gallery reseeded.';
+  } catch (e) {
+    $('note').textContent = 'Seed error: ' + e.message;
+  } finally {
+    busy(false);
+  }
+};
+
+// Issue one request on load so the panel is never shown empty.
+(async () => {
+  await loadStats();
+  await identify('known');
+})();
+</script>
+</body>
+</html>

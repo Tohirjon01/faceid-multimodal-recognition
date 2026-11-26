@@ -1,0 +1,52 @@
+# PROD environment.
+# Secrets come from environment variables with no defaults, so the service
+# refuses to start when one is missing. Failing to start is safer than
+# silently connecting to the wrong database.
+
+spring:
+  datasource:
+    url: ${FACEID_DB_URL}
+    username: ${FACEID_DB_USER}
+    password: ${FACEID_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: identity-prod-pool
+      maximum-pool-size: ${FACEID_DB_POOL_SIZE:20}
+      minimum-idle: 5
+      connection-timeout: 3000
+      max-lifetime: 1800000
+      leak-detection-threshold: 30000
+      initialization-fail-timeout: 10000
+
+  flyway:
+    enabled: true
+    schemas: identity
+    create-schemas: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    uz.tuit.faceid: INFO

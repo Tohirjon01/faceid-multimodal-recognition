@@ -1,0 +1,63 @@
+# ── PROD environment ────────────────────────────────────────────────
+#  PostgreSQL + pgvector. No demo data is ever created.
+#
+#  Every secret comes from an environment variable with no default, so the
+#  service refuses to start when one is missing. That is deliberate: failing
+#  to start is safer than silently connecting to the wrong database.
+
+spring:
+  datasource:
+    url: ${FACEID_DB_URL}
+    username: ${FACEID_DB_USER}
+    password: ${FACEID_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: faceid-prod-pool
+      maximum-pool-size: ${FACEID_DB_POOL_SIZE:20}
+      minimum-idle: 5
+      connection-timeout: 3000
+      max-lifetime: 1800000
+      leak-detection-threshold: 30000
+      initialization-fail-timeout: 10000
+
+  flyway:
+    enabled: true
+    schemas: faceid
+    create-schemas: true
+    locations: classpath:db/migration
+    # In production the schema is expected to exist already; baselining is not
+    # done automatically so the migration history stays unambiguous.
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+faceid:
+  demo:
+    # Synthetic templates must never reach a production database.
+    auto-seed: false
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Metrics are not exposed publicly in production — health and info only.
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  # The API documentation should not be publicly browsable in production.
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    uz.tuit.faceid: INFO

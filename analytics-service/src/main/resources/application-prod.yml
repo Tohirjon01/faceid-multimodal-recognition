@@ -1,0 +1,36 @@
+# PROD environment.
+# The upstream address is mandatory: no default is given, so the service
+# refuses to start without it. Failing to start is safer than silently
+# falling back to localhost.
+
+faceid:
+  analytics:
+    recognition-base-url: ${FACEID_RECOGNITION_URL}
+    event-window: ${FACEID_EVENT_WINDOW:200}
+    connect-timeout-ms: 2000
+    read-timeout-ms: 5000
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    uz.tuit.faceid: INFO
